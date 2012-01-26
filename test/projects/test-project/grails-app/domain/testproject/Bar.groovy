@@ -1,0 +1,4 @@
+package testproject
+
+class Bar {
+}
