@@ -44,3 +44,5 @@ grails.project.dependency.resolution = {
         build ":tomcat:$grailsVersion"
     }
 }
+
+grails.plugin.location.support = "../../../../multi-datasource-support"
