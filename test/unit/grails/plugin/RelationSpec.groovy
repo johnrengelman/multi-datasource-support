@@ -7,10 +7,10 @@ class RelationSpec extends UnitSpec {
     def "Id field is added"() {
         when:
         Foo foo = new Foo()
-        foo.barId = 123L
+        foo.@barId = 123L
         
         then:
-        foo.barId == 123L
+        foo.@barId == 123L
     }
 }
 

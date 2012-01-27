@@ -13,6 +13,13 @@ import java.lang.reflect.Modifier
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression
 import org.codehaus.groovy.ast.expr.ArgumentListExpression
 import org.codehaus.groovy.ast.expr.ConstantExpression
+import org.codehaus.groovy.ast.Parameter
+import org.codehaus.groovy.ast.builder.AstBuilder
+import static org.objectweb.asm.Opcodes.ACC_PUBLIC
+import org.codehaus.groovy.ast.MethodNode
+import org.codehaus.groovy.ast.stmt.BlockStatement
+import org.codehaus.groovy.ast.stmt.ReturnStatement
+import org.codehaus.groovy.ast.VariableScope
 
 @GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)
 class RelationASTTransformation implements ASTTransformation {
@@ -31,18 +38,50 @@ class RelationASTTransformation implements ASTTransformation {
         //TODO implement real node validation
         true
     }
-    
+
     private addIdField(FieldNode annotatedField) {
-        String relatedPropertyName = annotatedField.getName()
-        ClassNode relatedPropertyIdType = ClassHelper.make(annotatedField.getType().getField("id").getType().getTypeClass())
         ClassNode parentClass = annotatedField.getOwner()
+
+        String relatedPropertyName = annotatedField.getName()
+        ClassNode relatedPropertyType = ClassHelper.make(annotatedField.getType().getName())
+        ClassNode relatedPropertyIdType = ClassHelper.make(annotatedField.getType().getField("id").getType().getName())
         
-        addFieldIfNonExistent(parentClass, relatedPropertyIdType, "${relatedPropertyName}Id")
+        addIdFieldIfNonExistent(parentClass, relatedPropertyIdType, "${relatedPropertyName}Id")
+        addAccessorMethodsIfNonExistent(parentClass, relatedPropertyType, relatedPropertyName)
     }
 
-    private static void addFieldIfNonExistent(ClassNode classNode, ClassNode fieldType, String fieldName) {
-        if (classNode != null && classNode.getField(fieldName) == null) {
-            classNode.addField(fieldName, Modifier.PUBLIC, fieldType, ConstantExpression.NULL);
+    private void addIdFieldIfNonExistent(ClassNode parentClass, ClassNode fieldType, String fieldName) {
+        String idFieldName = "${fieldName}Id"
+        if (parentClass != null && parentClass.getField(idFieldName) == null) {
+            parentClass.addField(idFieldName, Modifier.PUBLIC, fieldType, ConstantExpression.NULL);
         }
+    }
+
+    private void addAccessorMethodsIfNonExistent(ClassNode parentClass, ClassNode returnType, String fieldName) {
+        addGetterMethodIfNonExistent(parentClass, returnType, fieldName)
+        addSetterMethodIfNonExistent(parentClass, returnType, fieldName)
+    }
+    
+    private void addGetterMethodIfNonExistent(ClassNode parentClass, ClassNode returnType, String fieldName) {
+        String getMethodName = "get${fieldName.capitalize()}"
+        String idFieldName = "${fieldName}Id"
+        if (parentClass != null && parentClass.getMethod(getMethodName, Parameter.EMPTY_ARRAY) == null) {
+            MethodNode methodNode = new MethodNode(getMethodName,
+                                                   ACC_PUBLIC,
+                                                   ClassHelper.make(String, false),
+                                                   Parameter.EMPTY_ARRAY,
+                                                   [] as ClassNode[],
+                                                   new BlockStatement(
+                                                       [new ReturnStatement(
+                                                               new ConstantExpression('test')
+                                                       )],
+                                                       new VariableScope()
+                                                   ))
+            parentClass.addMethod(methodNode)
+        }
+    }
+    
+    private void addSetterMethodIfNonExistent(ClassNode parentClass, ClassNode returnType, String fieldName) {
+        
     }
 }
