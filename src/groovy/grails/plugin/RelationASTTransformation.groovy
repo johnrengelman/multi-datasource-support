@@ -1,25 +1,19 @@
 package grails.plugin
 
-import org.codehaus.groovy.control.CompilePhase
-import org.codehaus.groovy.transform.GroovyASTTransformation
-import org.codehaus.groovy.transform.ASTTransformation
-import org.codehaus.groovy.control.SourceUnit
-import org.codehaus.groovy.ast.ASTNode
-import org.codehaus.groovy.ast.FieldNode
-import org.codehaus.groovy.grails.compiler.injection.GrailsASTUtils
-import org.codehaus.groovy.ast.ClassNode
-import org.codehaus.groovy.ast.ClassHelper
 import java.lang.reflect.Modifier
-import org.codehaus.groovy.ast.expr.ConstructorCallExpression
-import org.codehaus.groovy.ast.expr.ArgumentListExpression
-import org.codehaus.groovy.ast.expr.ConstantExpression
-import org.codehaus.groovy.ast.Parameter
-import org.codehaus.groovy.ast.builder.AstBuilder
-import static org.objectweb.asm.Opcodes.ACC_PUBLIC
-import org.codehaus.groovy.ast.MethodNode
 import org.codehaus.groovy.ast.stmt.BlockStatement
+import org.codehaus.groovy.ast.stmt.ExpressionStatement
+import org.codehaus.groovy.ast.stmt.IfStatement
 import org.codehaus.groovy.ast.stmt.ReturnStatement
-import org.codehaus.groovy.ast.VariableScope
+import org.codehaus.groovy.control.CompilePhase
+import org.codehaus.groovy.control.SourceUnit
+import org.codehaus.groovy.syntax.Token
+import org.codehaus.groovy.transform.ASTTransformation
+import org.codehaus.groovy.transform.GroovyASTTransformation
+import org.codehaus.groovy.ast.*
+import org.codehaus.groovy.ast.expr.*
+import static org.objectweb.asm.Opcodes.ACC_PUBLIC
+import org.codehaus.groovy.ast.stmt.EmptyStatement
 
 @GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)
 class RelationASTTransformation implements ASTTransformation {
@@ -46,7 +40,7 @@ class RelationASTTransformation implements ASTTransformation {
         ClassNode relatedPropertyType = ClassHelper.make(annotatedField.getType().getName())
         ClassNode relatedPropertyIdType = ClassHelper.make(annotatedField.getType().getField("id").getType().getName())
         
-        addIdFieldIfNonExistent(parentClass, relatedPropertyIdType, "${relatedPropertyName}Id")
+        addIdFieldIfNonExistent(parentClass, relatedPropertyIdType, relatedPropertyName)
         addAccessorMethodsIfNonExistent(parentClass, relatedPropertyType, relatedPropertyName)
     }
 
@@ -66,22 +60,116 @@ class RelationASTTransformation implements ASTTransformation {
         String getMethodName = "get${fieldName.capitalize()}"
         String idFieldName = "${fieldName}Id"
         if (parentClass != null && parentClass.getMethod(getMethodName, Parameter.EMPTY_ARRAY) == null) {
-            MethodNode methodNode = new MethodNode(getMethodName,
-                                                   ACC_PUBLIC,
-                                                   ClassHelper.make(String, false),
-                                                   Parameter.EMPTY_ARRAY,
-                                                   [] as ClassNode[],
-                                                   new BlockStatement(
-                                                       [new ReturnStatement(
-                                                               new ConstantExpression('test')
-                                                       )],
-                                                       new VariableScope()
-                                                   ))
+            MethodNode methodNode = new MethodNode(
+                getMethodName,
+                ACC_PUBLIC,
+                returnType,
+                Parameter.EMPTY_ARRAY,
+                [] as ClassNode[],
+                new BlockStatement(
+                   [
+                       new IfStatement(
+                           new BooleanExpression(
+                               new BinaryExpression(
+                                   new BinaryExpression(
+                                       new VariableExpression(idFieldName),
+                                       Token.newSymbol("!=", 0, 0),
+                                       ConstantExpression.NULL
+                                   ),
+                                   Token.newSymbol("&&", 0, 0),
+                                   callStaticMethod(returnType, "exists", idFieldName)
+                               )
+                           ),
+                           createBlockReturnStatement(callStaticMethod(returnType, "get", idFieldName)),
+                           createBlockReturnStatement(ConstantExpression.NULL)
+                       )
+                   ],
+                   new VariableScope()
+                )
+            )
             parentClass.addMethod(methodNode)
         }
     }
     
     private void addSetterMethodIfNonExistent(ClassNode parentClass, ClassNode returnType, String fieldName) {
-        
+        String setMethodName = "set${fieldName.capitalize()}"
+        String idFieldName = "${fieldName}Id"
+        if (parentClass != null && parentClass.getMethod(setMethodName, new Parameter(returnType, fieldName)) == null) {
+            MethodNode methodNode = new MethodNode(
+                setMethodName,
+                ACC_PUBLIC,
+                new ClassNode(Void),
+                [new Parameter(returnType, fieldName)] as Parameter[],
+                [] as ClassNode[],
+                new BlockStatement(
+                    [
+                        new IfStatement(
+                            new BooleanExpression(
+                                new BinaryExpression(
+                                    new BinaryExpression(
+                                        new VariableExpression(idFieldName),
+                                        Token.newSymbol("!=", 0, 0),
+                                        ConstantExpression.NULL
+                                    ),
+                                    Token.newSymbol("&&", 0, 0),
+                                    callMethod(
+                                        new VariableExpression(fieldName),
+                                        "getId",
+                                        new ArgumentListExpression()
+                                    )
+                                )
+                            ),
+                            new BlockStatement(
+                                [
+                                    new ExpressionStatement(
+                                        new BinaryExpression(
+                                            new VariableExpression(idFieldName),
+                                            Token.newSymbol("=", 0, 0),
+                                            callMethod(
+                                                new VariableExpression(fieldName),
+                                                "getId",
+                                                new ArgumentListExpression()
+                                            )
+                                        )
+                                    )
+                                ],
+                                new VariableScope()
+                            ),
+                            new EmptyStatement()
+                        )
+                    ],
+                    new VariableScope()
+                )
+            )
+            parentClass.addMethod(methodNode)
+        }
     }
+    
+    private static StaticMethodCallExpression callStaticMethod(ClassNode parentClass, String method, String variable) {
+        new StaticMethodCallExpression(
+            parentClass,
+            method,
+            new ArgumentListExpression(
+                new VariableExpression(variable)
+            )
+        )    
+    }
+    
+    private static MethodCallExpression callMethod(Expression object, String method, Expression arguments) {
+        new MethodCallExpression(
+            object,
+            method,
+            arguments
+        )    
+    }
+    
+    private static BlockStatement createBlockReturnStatement(Expression expression) {
+        new BlockStatement(
+            [
+                new ReturnStatement(expression)
+            ],
+            new VariableScope()
+        )
+    }
+
 }
