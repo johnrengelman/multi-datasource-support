@@ -15,7 +15,7 @@ import org.codehaus.groovy.ast.expr.*
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC
 import org.codehaus.groovy.ast.stmt.EmptyStatement
 
-@GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)
+@GroovyASTTransformation(phase = CompilePhase.SEMANTIC_ANALYSIS)
 class RelationASTTransformation implements ASTTransformation {
 
     void visit(ASTNode[] astNodes, SourceUnit sourceUnit) {
@@ -37,17 +37,17 @@ class RelationASTTransformation implements ASTTransformation {
         ClassNode parentClass = annotatedField.getOwner()
 
         String relatedPropertyName = annotatedField.getName()
-        ClassNode relatedPropertyType = ClassHelper.make(annotatedField.getType().getName())
-        ClassNode relatedPropertyIdType = ClassHelper.make(annotatedField.getType().getField("id").getType().getName())
+        ClassNode relatedPropertyType = annotatedField.getType()
+        String relatedPropertyIdType = annotatedField.getType().getField("id").getType().getName()
         
         addIdFieldIfNonExistent(parentClass, relatedPropertyIdType, relatedPropertyName)
         addAccessorMethodsIfNonExistent(parentClass, relatedPropertyType, relatedPropertyName)
     }
 
-    private void addIdFieldIfNonExistent(ClassNode parentClass, ClassNode fieldType, String fieldName) {
+    private void addIdFieldIfNonExistent(ClassNode parentClass, String fieldType, String fieldName) {
         String idFieldName = "${fieldName}Id"
         if (parentClass != null && parentClass.getField(idFieldName) == null) {
-            parentClass.addField(idFieldName, Modifier.PUBLIC, fieldType, ConstantExpression.NULL);
+            parentClass.addField(idFieldName, Modifier.PUBLIC, ClassHelper.make(fieldType), ConstantExpression.NULL);
         }
     }
 
@@ -77,10 +77,10 @@ class RelationASTTransformation implements ASTTransformation {
                                        ConstantExpression.NULL
                                    ),
                                    Token.newSymbol("&&", 0, 0),
-                                   callStaticMethod(returnType, "exists", idFieldName)
+                                   callStaticMethod(returnType, "exists", new VariableExpression(idFieldName) as Expression[])
                                )
                            ),
-                           createBlockReturnStatement(callStaticMethod(returnType, "get", idFieldName)),
+                           createBlockReturnStatement(callStaticMethod(returnType, "get", new VariableExpression(idFieldName) as Expression[])),
                            createBlockReturnStatement(ConstantExpression.NULL)
                        )
                    ],
@@ -98,7 +98,7 @@ class RelationASTTransformation implements ASTTransformation {
             MethodNode methodNode = new MethodNode(
                 setMethodName,
                 ACC_PUBLIC,
-                new ClassNode(Void),
+                ClassHelper.VOID_TYPE,
                 [new Parameter(returnType, fieldName)] as Parameter[],
                 [] as ClassNode[],
                 new BlockStatement(
@@ -107,15 +107,23 @@ class RelationASTTransformation implements ASTTransformation {
                             new BooleanExpression(
                                 new BinaryExpression(
                                     new BinaryExpression(
-                                        new VariableExpression(idFieldName),
+                                        callMethod(
+                                            new VariableExpression(fieldName),
+                                            "getId",
+                                            new ArgumentListExpression()
+                                        ),
                                         Token.newSymbol("!=", 0, 0),
                                         ConstantExpression.NULL
                                     ),
                                     Token.newSymbol("&&", 0, 0),
-                                    callMethod(
-                                        new VariableExpression(fieldName),
-                                        "getId",
-                                        new ArgumentListExpression()
+                                    callStaticMethod(
+                                        returnType,
+                                        "exists",
+                                        callMethod(
+                                                new VariableExpression(fieldName),
+                                                "getId",
+                                                new ArgumentListExpression()
+                                        ) as Expression[]
                                     )
                                 )
                             ),
@@ -145,13 +153,11 @@ class RelationASTTransformation implements ASTTransformation {
         }
     }
     
-    private static StaticMethodCallExpression callStaticMethod(ClassNode parentClass, String method, String variable) {
+    private static StaticMethodCallExpression callStaticMethod(ClassNode parentClass, String method, Expression[] arguments) {
         new StaticMethodCallExpression(
             parentClass,
             method,
-            new ArgumentListExpression(
-                new VariableExpression(variable)
-            )
+            new ArgumentListExpression(arguments)
         )    
     }
     
