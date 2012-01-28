@@ -38,7 +38,7 @@ class RelationUnitTest {
     public void testSetter() {
         assert foo
         assert bar
-        assert !(foo.@barId)
+        assert !(foo.barId)
         assert bar.id
 
         assert bar.getId()
@@ -48,5 +48,56 @@ class RelationUnitTest {
 
         assert foo.barId == bar.id
         assert foo.getBar() == bar
+    }
+    
+    @Test
+    public void testSetterUnSavedArg() {
+        Bar bar2 = new Bar(bar: "bar2")
+        assert !(foo.barId)
+        
+        foo.setBar(bar2)
+        
+        assert !(foo.barId)
+        assert !(foo.getBar())
+        
+        foo.setBar(bar)
+        assert foo.barId
+        assert foo.getBar() == bar
+        
+        foo.setBar(bar2)
+        assert foo.barId
+        assert foo.getBar() == bar
+    }
+    
+    @Test
+    public void testSetterNullArg() {
+        
+        assert !(foo.barId)
+        
+        foo.setBar(null)
+        
+        assert !(foo.barId)
+        assert !(foo.getBar())
+
+        foo.setBar(bar)
+        assert foo.barId
+        assert foo.getBar() == bar
+        
+        foo.setBar(null)
+        
+        assert foo.barId
+        assert foo.getBar() == bar
+    }
+    
+    @Test
+    public void testGetterNonExistentId() {
+        foo.setBar(bar)
+        
+        assert foo.barId
+        assert foo.getBar() == bar
+        
+        foo.barId = bar.id+1
+        
+        assert !(foo.getBar())
     }
 }
