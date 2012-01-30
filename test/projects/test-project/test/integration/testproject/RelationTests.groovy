@@ -29,5 +29,9 @@ class RelationTests extends GroovyTestCase {
         assert Bar.count() == 1
         assert Bar.lookup.get(bar2.id) == bar2
         assert Bar.get(bar2.id) != bar2
+        
+        foo.setBar(bar2)
+        
+        assert foo.getBar() == Bar.lookup.get(bar2.id)
     }
 }
