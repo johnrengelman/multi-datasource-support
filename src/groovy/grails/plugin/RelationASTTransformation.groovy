@@ -15,7 +15,7 @@ import org.codehaus.groovy.ast.expr.*
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC
 import org.codehaus.groovy.ast.stmt.EmptyStatement
 
-@GroovyASTTransformation(phase = CompilePhase.INSTRUCTION_SELECTION )
+@GroovyASTTransformation(phase = CompilePhase.INSTRUCTION_SELECTION)
 class RelationASTTransformation implements ASTTransformation {
 
     void visit(ASTNode[] astNodes, SourceUnit sourceUnit) {
@@ -30,6 +30,7 @@ class RelationASTTransformation implements ASTTransformation {
 
     private boolean validNodes(ASTNode[] astNodes) {
         //TODO implement real node validation
+        //Need to verify that this is only being used on an Entity
         true
     }
 
@@ -123,13 +124,21 @@ class RelationASTTransformation implements ASTTransformation {
                             new BooleanExpression(
                                 new BinaryExpression(
                                     new BinaryExpression(
-                                        callMethod(
+                                        new BinaryExpression(
                                             new VariableExpression(fieldName),
-                                            "getId",
-                                            new ArgumentListExpression()
+                                            Token.newSymbol("!=", 0, 0),
+                                            ConstantExpression.NULL
                                         ),
-                                        Token.newSymbol("!=", 0, 0),
-                                        ConstantExpression.NULL
+                                        Token.newSymbol("&&", 0, 0),
+                                        new BinaryExpression(
+                                            callMethod(
+                                                new VariableExpression(fieldName),
+                                                "getId",
+                                                new ArgumentListExpression()
+                                            ),
+                                            Token.newSymbol("!=", 0, 0),
+                                            ConstantExpression.NULL
+                                        )
                                     ),
                                     Token.newSymbol("&&", 0, 0),
                                     callStaticMethod(

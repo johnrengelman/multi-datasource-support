@@ -8,4 +8,7 @@ class Bar {
     static constraints = {
     }
 
+    static mapping = {
+        datasources(['DEFAULT', 'lookup'])
+    }
 }

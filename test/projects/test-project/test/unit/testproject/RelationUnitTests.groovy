@@ -5,10 +5,11 @@ import grails.test.mixin.Mock
 import org.junit.Before
 import org.junit.Test
 import grails.test.mixin.support.GrailsUnitTestMixin
+import org.junit.Ignore
 
 @Mixin(GrailsUnitTestMixin)
 @Mock([Foo, Bar, Alpha, Beta])
-class RelationUnitTest {
+class RelationUnitTests {
     
     Foo foo
     Bar bar
@@ -134,5 +135,19 @@ class RelationUnitTest {
         beta.save()
 
         assert Alpha.getField("betaId").type == Long
+    }
+    
+    @Test
+    @Ignore("This needs to be run as integration test for datasource support")
+    public void testGetterIsDatasourceAware() {
+        Bar bar2 = new Bar(bar: "bar2")
+        assert bar2.validate()
+        assert bar2.lookup.save()
+        
+        assert bar2.id
+        assert Bar.lookup.count() == 1
+        assert Bar.count() == 1
+        assert Bar.lookup.get(bar2.id) == bar2
+        assert Bar.get(bar2.id) != bar2
     }
 }
