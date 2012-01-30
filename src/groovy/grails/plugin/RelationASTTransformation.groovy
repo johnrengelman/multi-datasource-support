@@ -15,7 +15,7 @@ import org.codehaus.groovy.ast.expr.*
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC
 import org.codehaus.groovy.ast.stmt.EmptyStatement
 
-@GroovyASTTransformation(phase = CompilePhase.SEMANTIC_ANALYSIS)
+@GroovyASTTransformation(phase = CompilePhase.INSTRUCTION_SELECTION )
 class RelationASTTransformation implements ASTTransformation {
 
     void visit(ASTNode[] astNodes, SourceUnit sourceUnit) {
@@ -23,7 +23,7 @@ class RelationASTTransformation implements ASTTransformation {
 
             FieldNode field = (FieldNode) astNodes[1]
 
-            addIdField(field)
+            populateObject(field)
             
         }
     }
@@ -33,7 +33,7 @@ class RelationASTTransformation implements ASTTransformation {
         true
     }
 
-    private addIdField(FieldNode annotatedField) {
+    private populateObject(FieldNode annotatedField) {
         ClassNode parentClass = annotatedField.getOwner()
 
         String relatedPropertyName = annotatedField.getName()
@@ -42,12 +42,28 @@ class RelationASTTransformation implements ASTTransformation {
         
         addIdFieldIfNonExistent(parentClass, relatedPropertyIdType, relatedPropertyName)
         addAccessorMethodsIfNonExistent(parentClass, relatedPropertyType, relatedPropertyName)
+        addFieldToTransients(parentClass, relatedPropertyName)
     }
 
     private void addIdFieldIfNonExistent(ClassNode parentClass, String fieldType, String fieldName) {
         String idFieldName = "${fieldName}Id"
         if (parentClass != null && parentClass.getField(idFieldName) == null) {
             parentClass.addField(idFieldName, Modifier.PUBLIC, ClassHelper.make(fieldType), ConstantExpression.NULL);
+        }
+    }
+    
+    private void addFieldToTransients(ClassNode parentClass, String propertyName) {
+        if(parentClass != null) {
+            FieldNode transients = parentClass.getField("transients")
+            if(!transients) {
+                transients = parentClass.addField(
+                    "transients",
+                    Modifier.STATIC,
+                    ClassHelper.DYNAMIC_TYPE,
+                    new ListExpression()
+                )
+            }
+            ((ListExpression) transients.getInitialExpression()).addExpression(new ConstantExpression(propertyName))
         }
     }
 

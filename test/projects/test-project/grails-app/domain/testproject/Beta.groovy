@@ -1,9 +1,8 @@
 package testproject
 
-class Bar {
+class Beta {
 
-    Long id
-    String bar
+    String beta
 
     static constraints = {
     }

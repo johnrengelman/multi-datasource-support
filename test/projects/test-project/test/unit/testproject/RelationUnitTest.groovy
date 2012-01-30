@@ -4,9 +4,10 @@ import grails.test.mixin.TestFor
 import grails.test.mixin.Mock
 import org.junit.Before
 import org.junit.Test
+import grails.test.mixin.support.GrailsUnitTestMixin
 
-@TestFor(Foo)
-@Mock(Bar)
+@Mixin(GrailsUnitTestMixin)
+@Mock([Foo, Bar, Alpha, Beta])
 class RelationUnitTest {
     
     Foo foo
@@ -99,5 +100,39 @@ class RelationUnitTest {
         foo.barId = bar.id+1
         
         assert !(foo.getBar())
+    }
+    
+    @Test
+    public void testTransientsListCreated() {
+        assert Foo.transients
+        assert Foo.transients.contains("bar")
+    }
+    
+    @Test
+    public void testTransientsListAddedTo() {
+        Alpha alpha = new Alpha(alpha: "alpha")
+        assert alpha.validate()
+        alpha.save()
+        
+        Beta beta = new Beta(beta: "beta")
+        assert beta.validate()
+        beta.save()
+        
+        assert Alpha.transients
+        assert Alpha.transients.contains("beta")
+        assert Alpha.transients.contains("bar")
+    }
+
+    @Test
+    public void testIdFieldWorksWithGormGeneratedId() {
+        Alpha alpha = new Alpha(alpha: "alpha")
+        assert alpha.validate()
+        alpha.save()
+
+        Beta beta = new Beta(beta: "beta")
+        assert beta.validate()
+        beta.save()
+
+        assert Alpha.getField("betaId").type == Long
     }
 }
