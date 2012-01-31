@@ -2,6 +2,7 @@ package testproject
 
 import org.junit.Before
 import org.junit.Test
+import org.junit.Ignore
 
 class RelationTests extends GroovyTestCase {
 
@@ -19,6 +20,14 @@ class RelationTests extends GroovyTestCase {
     }
 
     @Test
+    public void testGetter() {
+
+        foo.setBar(bar)
+
+            assert foo.getBar() == bar
+    }
+
+    @Test
     public void testGetterIsDatasourceAware() {
         Bar bar2 = new Bar(bar: "bar2")
         assert bar2.validate()
@@ -32,6 +41,7 @@ class RelationTests extends GroovyTestCase {
         
         foo.setBar(bar2)
         
+        assert foo.barId == bar2.id
         assert foo.getBar() == Bar.lookup.get(bar2.id)
     }
 }

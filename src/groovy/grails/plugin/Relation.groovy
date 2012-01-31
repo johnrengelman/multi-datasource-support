@@ -11,5 +11,5 @@ import java.lang.annotation.RetentionPolicy
 @GroovyASTTransformationClass(["grails.plugin.RelationASTTransformation"])
 public @interface Relation {
 
-    String datasource
+    String datasource()
 }

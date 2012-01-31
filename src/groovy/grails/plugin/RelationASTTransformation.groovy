@@ -14,6 +14,7 @@ import org.codehaus.groovy.ast.*
 import org.codehaus.groovy.ast.expr.*
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC
 import org.codehaus.groovy.ast.stmt.EmptyStatement
+import org.codehaus.groovy.ast.builder.AstBuilder
 
 @GroovyASTTransformation(phase = CompilePhase.INSTRUCTION_SELECTION)
 class RelationASTTransformation implements ASTTransformation {
@@ -59,7 +60,7 @@ class RelationASTTransformation implements ASTTransformation {
             if(!transients) {
                 transients = parentClass.addField(
                     "transients",
-                    Modifier.STATIC,
+                    Modifier.PUBLIC | Modifier.STATIC,
                     ClassHelper.DYNAMIC_TYPE,
                     new ListExpression()
                 )
