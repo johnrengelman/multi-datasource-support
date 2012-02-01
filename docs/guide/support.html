@@ -1,0 +1,161 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+                      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+    <title>3 Supported Relations 0.1</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <link rel="stylesheet" href="../css/main.css" type="text/css" media="screen, print" title="Style" charset="utf-8"/>
+    <link rel="stylesheet" href="../css/pdf.css" type="text/css" media="print" title="PDF" charset="utf-8"/>
+    <script type="text/javascript">
+function addJsClass() {
+    var classes = document.body.className.split(" ");
+    classes.push("js");
+    document.body.className = classes.join(" ");
+}
+    </script>
+</head>
+
+<body class="body" onload="addJsClass();">
+<div id="navigation">
+    <ul>
+        <li>
+            <div id="nav-summary" onmouseover="toggleNavSummary(false)" onmouseout="toggleNavSummary(true)">
+                <a href="../guide/index.html" class="button">Table of contents</a>
+
+                <div id="nav-summary-childs" style="display:none;">
+                    
+                    <div class="toc-item" style="margin-left:0"><a href="../guide/introduction.html"><strong>1</strong><span>Introduction</span></a>
+                    </div>
+                    
+                    <div class="toc-item" style="margin-left:0"><a href="../guide/gettingStarted.html"><strong>2</strong><span>Getting Started</span></a>
+                    </div>
+                    
+                    <div class="toc-item" style="margin-left:0"><a href="../guide/support.html"><strong>3</strong><span>Supported Relations</span></a>
+                    </div>
+                    
+                    <div class="toc-item" style="margin-left:0"><a href="../guide/additionalOptions.html"><strong>4</strong><span>Additional Options</span></a>
+                    </div>
+                    
+                </div>
+            </div>
+        </li>
+        <li class="separator selected">
+            <a id="ref-button" onclick="localToggle(); return false;" href="#">Quick Reference</a>
+        </li>
+    </ul>
+</div>
+<div id="header">
+    <div class="images clearfix">
+        
+        
+    </div>
+    <p></p>
+</div>
+
+
+<table id="colset" border="0" cellpadding="0" cellspacing="0">
+    <tr>
+        <td id="col1">
+            <div id="main" class="corner-all">
+
+                
+                    <div class="toc-item prev-left"><a href="../guide/gettingStarted.html">&lt;&lt; <strong>2</strong><span>Getting Started</span></a></div>
+                
+
+                <span id='toggle-col1' class="toggle">(<a href="#" onclick="localToggle(); return false;">Quick Reference</a>)</span>
+
+                
+                    <div class="toc-item next-right"><a href="../guide/additionalOptions.html"><strong>4</strong><span>Additional Options</span> >></a></div>
+                
+
+
+                <div class="project">
+                    <h1>3 Supported Relations - Reference Documentation</h1>
+
+                    <p><strong>Authors:</strong> John Engelman</p>
+
+                    <p><strong>Version:</strong> 0.1</p>
+
+                    
+                </div>
+
+                
+                <div id="table-of-content">
+                    <h2>Table of Contents</h2>
+                    
+                    <div class="toc-item" style="margin-left:0px"><a href="#oneToOne"><strong>3.1</strong><span>One-To-One Relations</span></a>
+                    </div>
+                    
+                </div>
+                
+
+                
+
+<h1 id="support">3 Supported Relations</h1>
+Apply support to domain classes in the following manner:
+
+
+
+<h2 id="oneToOne">3.1 One-To-One Relations</h2>
+Given the following the following one-to-one relationship:
+<div class="code"><pre>class Bar &#123;
+   <span class="java&#45;object">String</span> bar<p class="paragraph"/>   <span class="java&#45;keyword">static</span> mapping = &#123;
+      datasource = 'lookup'
+   &#125;
+&#125;<p class="paragraph"/>class Foo &#123;
+   <span class="java&#45;object">String</span> foo<p class="paragraph"/>   @Relation
+   Bar bar<p class="paragraph"/>   <span class="java&#45;keyword">static</span> mapping = &#123;
+      datasource = 'audit'
+   &#125;
+&#125;</pre></div><p class="paragraph"/>The transformation will modify Foo.class to the following:
+<div class="code"><pre>class Foo &#123;
+   <span class="java&#45;object">String</span> foo<p class="paragraph"/>   @Relation
+   Bar bar<p class="paragraph"/>   <span class="java&#45;object">Long</span> barId<p class="paragraph"/>   <span class="java&#45;keyword">static</span> transients = &#91; 'bar' &#93;<p class="paragraph"/>   <span class="java&#45;keyword">static</span> mapping = &#123;
+      datasource = 'audit'
+   &#125;<p class="paragraph"/>   <span class="java&#45;keyword">public</span> Bar getBar() &#123;
+      <span class="java&#45;keyword">if</span>(barId) &#123;
+         <span class="java&#45;keyword">return</span> Bar.get(barId)
+      &#125; <span class="java&#45;keyword">else</span> &#123;
+         <span class="java&#45;keyword">return</span> <span class="java&#45;keyword">null</span>
+      &#125;
+   &#125;<p class="paragraph"/>   <span class="java&#45;keyword">public</span> void setBar(Bar bar) &#123;
+      <span class="java&#45;keyword">if</span>(bar) &#123;
+         barId = bar.id
+      &#125;
+   &#125;
+&#125;</pre></div>
+
+
+
+                <div style="clear:both;margin-top:15px;"></div>
+                
+                    <div class="toc-item prev-left"><a href="../guide/gettingStarted.html">&lt;&lt; <strong>2</strong><span>Getting Started</span></a></div>
+                
+                    <div class="toc-item next-right"><a href="../guide/additionalOptions.html"><strong>4</strong><span>Additional Options</span> >></a></div>
+                
+                <div style="clear:both"></div>
+            </div>
+        </td>
+        <td id="col2">
+            <div class="local clearfix">
+                <div class="local-title">
+                    <a href="../guide/index.html" target="mainFrame">Quick Reference</a>
+                    <span class="toggle">(<a href="#" onclick="localToggle(); return false;">hide</a>)</span>
+                </div>
+                <div class="menu">
+                    
+                </div>
+            </div>
+        </td>
+    </tr>
+</table>
+
+<div id="footer">
+    
+    
+</div>
+
+<script type="text/javascript" src="../js/docs.js"></script>
+
+</body>
+</html>
