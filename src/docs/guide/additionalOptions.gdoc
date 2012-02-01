@@ -1,0 +1,24 @@
+The _@Relation_ annotation can also be configured to specify a specific datasource for the relation. This allows the relation to use a datasource other than the default if the related object is mapped to multiple datasources. For example:
+
+{code}
+class Bar {
+   String bar
+
+   static mapping = {
+      datasources(['audit', 'lookup'])
+   }
+}
+
+class Foo {
+   String foo
+
+   @Relation(datasource='lookup')
+   Bar bar
+}
+{code}
+
+Will modify Foo.class to use in the _getBar()_ method:
+{code}
+return Bar.lookup.get(barId)
+{code}
+

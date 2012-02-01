@@ -1,0 +1,3 @@
+The Multiple Datasource Support plugin provides first-class support relations between Grails domain objects that are mapped to different datsources using the Grails 2.0 multiple datasource configuration.
+
+The plugin provides an AST Transformation that inserts the necessary field and methods to a domain class to lookup a related object through GORM allowing for that object to exist in a different data source.

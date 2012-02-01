@@ -1,0 +1,9 @@
+introduction:
+  title: Introduction
+  changes: Change Log
+gettingStarted: Getting Started
+support:
+  title: Supported Relations
+  oneToOne: One-To-One Relations
+additionalOptions:
+  title: Additional Options

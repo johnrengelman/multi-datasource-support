@@ -1,0 +1,53 @@
+Given the following the following one-to-one relationship:
+{code}
+class Bar {
+   String bar
+
+   static mapping = {
+      datasource = 'lookup'
+   }
+}
+
+class Foo {
+   String foo
+ 
+   @Relation
+   Bar bar
+
+   static mapping = {
+      datasource = 'audit'
+   }
+}
+{code}
+
+The transformation will modify Foo.class to the following:
+{code}
+class Foo {
+   String foo
+
+   @Relation
+   Bar bar
+
+   Long barId
+
+   static transients = [ 'bar' ]
+
+   static mapping = {
+      datasource = 'audit'
+   }
+
+   public Bar getBar() {
+      if(barId) {
+         return Bar.get(barId)
+      } else {
+         return null
+      }
+   }
+
+   public void setBar(Bar bar) {
+      if(bar) {
+         barId = bar.id
+      }
+   }
+}
+{code}
