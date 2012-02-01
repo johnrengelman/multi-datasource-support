@@ -15,7 +15,6 @@ class MultiDatasourceSupportGrailsPlugin {
     def author = "John Engelman"
     def authorEmail = "john.r.engelman@gmail.com"
     def description = '''\
-Provides support using GORM for domain relations where domain objects are mapped to different datasources.
 '''
 
     // URL to the plugin's documentation

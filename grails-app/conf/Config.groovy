@@ -23,5 +23,5 @@ log4j = {
     warn   'org.mortbay.log'
 }
 
-grails.doc.title = "Multiple Datasource Support User Guide"
+grails.doc.title = "Multiple Datasource Support"
 grails.doc.authors = "John Engelman"
