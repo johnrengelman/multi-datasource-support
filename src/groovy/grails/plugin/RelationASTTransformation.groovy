@@ -60,13 +60,27 @@ class RelationASTTransformation implements ASTTransformation {
         addFieldToTransients(parentClass, relatedPropertyName)
     }
 
+    /**
+     * Long barId
+     *
+     * or
+     *
+     * <Type> barId
+     */
     private void addIdFieldIfNonExistent(ClassNode parentClass, String fieldType, String fieldName) {
         String idFieldName = "${fieldName}Id"
         if (parentClass != null && parentClass.getField(idFieldName) == null) {
             parentClass.addField(idFieldName, Modifier.PUBLIC, ClassHelper.make(fieldType), ConstantExpression.NULL);
         }
     }
-    
+
+    /**
+     * static transients = ['bar']
+     *
+     * or
+     *
+     * static transients = ['bar', 'bar2']
+     */
     private void addFieldToTransients(ClassNode parentClass, String propertyName) {
         if(parentClass != null) {
             FieldNode transients = parentClass.getField("transients")
@@ -86,21 +100,30 @@ class RelationASTTransformation implements ASTTransformation {
         addGetterMethodIfNonExistent(parentClass, returnType, fieldName, ds)
         addSetterMethodIfNonExistent(parentClass, returnType, fieldName, ds)
     }
-    
+
+    /**
+     * if(this.barId) {
+     *     Bar.get(this.barId)
+     * } else {
+     *     null
+     * }
+     *
+     * or
+     *
+     * if(this.barId) {
+     *     Bar.datasource.get(this.barId)
+     * } else {
+     *     null
+     * }
+     */
     private void addGetterMethodIfNonExistent(ClassNode parentClass, ClassNode returnType, String fieldName, String ds) {
         String getMethodName = "get${fieldName.capitalize()}"
         String idFieldName = "${fieldName}Id"
         Expression target = callStaticMethod(returnType, "get", new VariableExpression(idFieldName))
-        Expression target2 = callStaticMethod(returnType, "exists", new VariableExpression(idFieldName))
         if (ds) {
             target = callMethod(
                 new PropertyExpression(new ClassExpression(returnType), ds),
                 "get",
-                new VariableExpression(idFieldName)
-            )
-            target2 = callMethod(
-                new PropertyExpression(new ClassExpression(returnType), ds),
-                "exists",
                 new VariableExpression(idFieldName)
             )
         }
@@ -116,13 +139,9 @@ class RelationASTTransformation implements ASTTransformation {
                        new IfStatement(
                            new BooleanExpression(
                                new BinaryExpression(
-                                   new BinaryExpression(
-                                       new VariableExpression(idFieldName),
-                                       Token.newSymbol("!=", 0, 0),
-                                       ConstantExpression.NULL
-                                   ),
-                                   Token.newSymbol("&&", 0, 0),
-                                   target2
+                                   new VariableExpression(idFieldName),
+                                   Token.newSymbol("!=", 0, 0),
+                                   ConstantExpression.NULL
                                )
                            ),
                            createBlockReturnStatement(target),
@@ -135,31 +154,16 @@ class RelationASTTransformation implements ASTTransformation {
             parentClass.addMethod(methodNode)
         }
     }
-    
+
+    /**
+     * if(bar && bar.id != null) {
+     *     this.barId = bar.id
+     * }
+     */
     private void addSetterMethodIfNonExistent(ClassNode parentClass, ClassNode returnType, String fieldName, String ds) {
         String setMethodName = "set${fieldName.capitalize()}"
         String idFieldName = "${fieldName}Id"
         if (parentClass != null && parentClass.getMethod(setMethodName, new Parameter(returnType, fieldName)) == null) {
-            Expression target = callStaticMethod(
-                returnType,
-                "exists",
-                callMethod(
-                        new VariableExpression(fieldName),
-                        "getId",
-                        new ArgumentListExpression()
-                )
-            )
-            if (ds) {
-                target = callMethod(
-                    new PropertyExpression(new ClassExpression(returnType), ds),
-                    "exists",
-                    callMethod(
-                        new VariableExpression(fieldName),
-                        "getId",
-                        new ArgumentListExpression()
-                    )
-                )
-            }
             MethodNode methodNode = new MethodNode(
                 setMethodName,
                 ACC_PUBLIC,
@@ -171,18 +175,14 @@ class RelationASTTransformation implements ASTTransformation {
                         new IfStatement(
                             new BooleanExpression(
                                 new BinaryExpression(
-                                    new BinaryExpression(
-                                        callMethod(
-                                            new VariableExpression(fieldName),
-                                            "getId",
-                                            new ArgumentListExpression(),
-                                            true
-                                        ),
-                                        Token.newSymbol("!=", 0, 0),
-                                        ConstantExpression.NULL
+                                    callMethod(
+                                        new VariableExpression(fieldName),
+                                        "getId",
+                                        new ArgumentListExpression(),
+                                        true
                                     ),
-                                    Token.newSymbol("&&", 0, 0),
-                                    target
+                                    Token.newSymbol("!=", 0, 0),
+                                    ConstantExpression.NULL
                                 )
                             ),
                             new BlockStatement(
