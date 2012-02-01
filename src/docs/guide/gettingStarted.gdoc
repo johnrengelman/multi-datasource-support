@@ -1,0 +1,13 @@
+h3. Install the plugin:
+{code}
+grails install-plugin multi-datasource-support
+{code}
+
+h3. Annotated domain object
+{code}
+class Foo {
+
+   @Relation
+   Bar bar
+}
+{code}
